@@ -3,6 +3,7 @@
 ## Credits
 
 [Securing APIs with Kong and Keycloak - Part 1](https://www.jerney.io/secure-apis-kong-keycloak-1/) by Joshua A Erney
+[Kong plugin jwt-keycloak](https://github.com/gbbirkisson/kong-plugin-jwt-keycloak)
 
 ## Requirements
 
@@ -547,4 +548,159 @@ As a reponse, you should be getting something like below
 }
 ```
 
-Yeah! This works. End we reached the end of this readme! All seems to work now.
+# Part 2: Adding Role/Scope level validation at service level
+
+## Kong plugin jwt-keycloak
+
+(Reference)[https://github.com/gbbirkisson/kong-plugin-jwt-keycloak.git]
+
+### Parameters
+
+| Parameter                              | Requied | Default           | Description                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------------- | ------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name                                   | yes     |                   | The name of the plugin to use, in this case `keycloak-jwt`.                                                                                                                                                                                                                                                                                                                              |
+| service_id                             | semi    |                   | The id of the Service which this plugin will target.                                                                                                                                                                                                                                                                                                                                     |
+| route_id                               | semi    |                   | The id of the Route which this plugin will target.                                                                                                                                                                                                                                                                                                                                       |
+| enabled                                | no      | `true`            | Whether this plugin will be applied.                                                                                                                                                                                                                                                                                                                                                     |
+| config.uri_param_names                 | no      | `jwt`             | A list of querystring parameters that Kong will inspect to retrieve JWTs.                                                                                                                                                                                                                                                                                                                |
+| config.cookie_names                    | no      |                   | A list of cookie names that Kong will inspect to retrieve JWTs.                                                                                                                                                                                                                                                                                                                          |
+| config.claims_to_verify                | no      | `exp`             | A list of registered claims (according to [RFC 7519](https://tools.ietf.org/html/rfc7519)) that Kong can verify as well. Accepted values: `exp`, `nbf`.                                                                                                                                                                                                                                  |
+| config.anonymous                       | no      |                   | An optional string (consumer uuid) value to use as an “anonymous” consumer if authentication fails. If empty (default), the request will fail with an authentication failure `4xx`. Please note that this value must refer to the Consumer `id` attribute which is internal to Kong, and not its `custom_id`.                                                                            |
+| config.run_on_preflight                | no      | `true`            | A boolean value that indicates whether the plugin should run (and try to authenticate) on `OPTIONS` preflight requests, if set to false then `OPTIONS` requests will always be allowed.                                                                                                                                                                                                  |
+| config.maximum_expiration              | no      | `0`               | An integer limiting the lifetime of the JWT to `maximum_expiration` seconds in the future. Any JWT that has a longer lifetime will rejected (HTTP 403). If this value is specified, `exp` must be specified as well in the `claims_to_verify` property. The default value of `0` represents an indefinite period. Potential clock skew should be considered when configuring this value. |
+| config.algorithm                       | no      | `RS256`           | The algorithm used to verify the token’s signature. Can be `HS256`, `HS384`, `HS512`, `RS256`, or `ES256`.                                                                                                                                                                                                                                                                               |
+| config.allowed_iss                     | yes     |                   | A list of allowed issuers for this route/service/api. Can be specified as a `string` or as a [Pattern](http://lua-users.org/wiki/PatternsTutorial).                                                                                                                                                                                                                                      |
+| config.iss_key_grace_period            | no      | `10`              | An integer that sets the number of seconds until public keys for an issuer can be updated after writing new keys to the cache. This is a guard so that the Kong cache will not invalidate every time a token signed with an invalid public key is sent to the plugin.                                                                                                                    |
+| config.well_known_template             | false   | *see description* | A string template that the well known endpoint for keycloak is created from. String formatting is applied on the template and `%s` is replaced by the issuer of the token. Default value is `%s/.well-known/openid-configuration`                                                                                                                                                        |
+| config.scope                           | no      |                   | A list of scopes the token must have to access the api, i.e. `["email"]`. The token only has to have one of the listed scopes to be authorized.                                                                                                                                                                                                                                          |
+| config.roles                           | no      |                   | A list of roles of current client the token must have to access the api, i.e. `["uma_protection"]`. The token only has to have one of the listed roles to be authorized.                                                                                                                                                                                                                 |
+| config.realm_roles                     | no      |                   | A list of realm roles (`realm_access`) the token must have to access the api, i.e. `["offline_access"]`. The token only has to have one of the listed roles to be authorized.                                                                                                                                                                                                            |
+| config.client_roles                    | no      |                   | A list of roles of a different client (`resource_access`) the token must have to access the api, i.e. `["account:manage-account"]`. The format for each entry should be `<CLIENT_NAME>:<ROLE_NAME>`. The token only has to have one of the listed roles to be authorized.                                                                                                                |
+| config.consumer_match                  | no      | `false`           | A boolean value that indicates if the plugin should find a kong consumer with `id`/`custom_id` that equals the `consumer_match_claim` claim in the access token.                                                                                                                                                                                                                         |
+| config.consumer_match_claim            | no      | `azp`             | The claim name in the token that the plugin will try to match the kong `id`/`custom_id` against.                                                                                                                                                                                                                                                                                         |
+| config.consumer_match_claim_custom_id  | no      | `false`           | A boolean value that indicates if the plugin should match the `consumer_match_claim` claim against the consumers `id` or `custom_id`. By default it matches the consumer against the `id`.                                                                                                                                                                                               |
+| config.consumer_match_ignore_not_found | no      | `false`           | A boolean value that indicates if the request should be let through regardless if the plugin is able to match the request to a kong consumer or not.                                                                                                                                                                                                                                     
+
+### Step 1: Add Role in Keycloak
+
+1. Login to Keycloak
+2. Select interested Realm
+3. Under Configure -> Roles -> Add Role. Add the role with name as ``` Scheme-Publisher```
+4. Under Manage -> Users -> Select User ```demouser``` -> Role Mapping -> Select the newly created ``` Scheme-Publisher``` from "Available Roles" and add to "Assigned Roles" 
+
+### Step 2: Add JWT Plugin at Service Level
+
+1. Login to KONGA
+2. Go to "Mock-Service"
+3. Go to Plugins
+4. Go to Add Plugins
+5. Go to "Others" and select JWT Keycloak
+
+### Step 3: Configure JWT Plugin at Service Level using KONGA
+1. Select to configure JWT Keycloak Plugin at Service Level
+2. put ISS as http://{HOST_IP}:8180/auth/realms/experimental  #Replace HOST_IP with your real IP
+3. put roles as ```Scheme-Publisher```
+4. save the changes
+
+#### In case if want to do it using CLI
+```curl -X POST http://localhost:8001/services/mock-service/plugins \
+    --data "name=jwt-keycloak" \
+    --data "config.allowed_iss=http://{HOST_IP}:8180/auth/realms/experimental"
+```
+### Step 4: Get the token issued
+```bash
+RAWTKN=$(curl -s -X POST \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -d "username=demouser" \
+        -d "password=demouser" \
+        -d 'grant_type=password' \
+        -d "client_id=myapp" \
+        http://${HOST_IP}:8180/auth/realms/experimental/protocol/openid-connect/token \
+        |jq . )
+```
+### Step 4: Check whether the configured roles are part of Token
+
+Sample echo
+```bash
+
+echo $RAWTKN
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ4U19oaGF5UHVFRWFuRFg0aE1RdkpSOXhsbUl3enRPY3FodkQ3bF9TQUJNIn0.eyJleHAiOjE2MjExODE5NjksImlhdCI6MTYyMTE4MTY2OSwianRpIjoiNTdlMDk3YmMtNjc0Ny00MWUwLTllYjQtMGViODVjNzE1MDNkIiwiaXNzIjoiaHR0cDovLzE3Mi4xNy4wLjE6ODE4MC9hdXRoL3JlYWxtcy9leHBlcmltZW50YWwiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiZWRlM2IyZDYtYTRlZi00MGRhLWFmNWItODk0NjE3M2ZjZGY5IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoibXlhcHAiLCJzZXNzaW9uX3N0YXRlIjoiY2ZjM2E2NDItZjVlOS00OGE4LWJjYjQtYWE3MmY0MjAyZDkwIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJTY2hlbWUtTWFuYWdlciIsIm9mZmxpbmVfYWNjZXNzIiwiU2NoZW1lLVB1Ymxpc2hlciIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibXlhcHAiOnsicm9sZXMiOlsiY29udGVudC1jcmVhdG9yIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRlbW8gVXNlciIsInByZWZlcnJlZF91c2VybmFtZSI6ImRlbW91c2VyIiwiZ2l2ZW5fbmFtZSI6IkRlbW8iLCJmYW1pbHlfbmFtZSI6IlVzZXIiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20ifQ.sknzTUUcqU8cgv-VOoDehDiIbq-w2GP6puSZZnh_15RaB1oMJDXc0zKHsFU6-w_d-5B6cLna764ZGjkAMIYO1pMlyEQHVptPpD_VgTiYeMXQ5XnMplxAczJycbPpCNM5v3rKK0Av-Rf0NcEE-OyPpgToCWJPEwKq-JIu-MNdfBRoEwrfuLCDgnkqXS1fp8rCah5VA-Xq0I7hRCh98xbdzLUYjQvTmMl_9JjCx8hCxegi0XjwUyfalUh900_VHXv6FneP5hTZUUqgWkspRNzPJ53DGJNrCNSeiS7dA-Kcqz5xWd-h2gBPKU1R6qTiuw-omn2wAiokI27NPIMfLW9Tbg",
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyZGZmMDI2MS01YzdjLTRmNGQtOTAxZS1lZjI3ZjM0YTNmNTUifQ.eyJqdGkiOiIyNjE2NDQyYi00ZTI5LTRmY2ItYTMzNi05ZTg5ZGZiNTUxNTgiLCJleHAiOjE1Njc3NDg5MDcsIm5iZiI6MCwiaWF0IjoxNTY3NzQ3MTA3LCJpc3MiOiJodHRwOi8vMTkyLjE2OC44OC4yMTo4MTgwL2F1dGgvcmVhbG1zL2V4cGVyaW1lbnRhbCIsImF1ZCI6Imh0dHA6Ly8xOTIuMTY4Ljg4LjIxOjgxODAvYXV0aC9yZWFsbXMvZXhwZXJpbWVudGFsIiwic3ViIjoiMTU4NDljNDUtOWUyMS00Zjk0LWI2ZjQtYTM5MjEzMjZkZDRiIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6Im15YXBwIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiYjE0YjY4OTQtMTVmNC00MTc2LWJiOTAtZGI5OGViODc5NGQ1IiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwifQ.CEBbW31oeMlzHHRw3nwRd0nKq4jFC0KbsUBm5yMw-Ao",
+  "token_type": "bearer",
+  "not-before-policy": 0,
+  "session_state": "b14b6894-15f4-4176-bb90-db98eb8794d5",
+  "scope": "profile email"
+}
+```
+
+You may use (JWT Decoder)[https://jwt.io/] by pasting the value from ```access-token```
+
+### Step 5: Check whether the configured roles are part of Token
+Now extract the Token from reponse using
+```
+export TKN=$(echo $RAWTKN | jq -r '.access_token')
+```
+
+Execute curl to simulate User
+```
+curl "http://${HOST_IP}:8000/mock" -H "Accept: application/json" -H "Authorization: Bearer $TKN"
+```
+
+In case of success:
+```
+{
+  "startedDateTime": "2021-05-16T16:35:30.588Z",
+  "clientIPAddress": "172.22.0.1",
+  "method": "GET",
+  "url": "http://172.17.0.1/request",
+  "httpVersion": "HTTP/1.1",
+  "cookies": {},
+  "headers": {
+    "host": "mockbin.org",
+    "connection": "close",
+    "accept-encoding": "gzip",
+    "x-forwarded-for": "172.22.0.1,103.216.147.111, 162.158.235.44",
+    "cf-ray": "65060500898a31a5-BOM",
+    "x-forwarded-proto": "http",
+    "cf-visitor": "{\"scheme\":\"http\"}",
+    "x-forwarded-host": "172.17.0.1",
+    "x-forwarded-port": "80",
+    "user-agent": "curl/7.68.0",
+    "accept": "application/json",
+    "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ4U19oaGF5UHVFRWFuRFg0aE1RdkpSOXhsbUl3enRPY3FodkQ3bF9TQUJNIn0.eyJleHAiOjE2MjExODMyMTMsImlhdCI6MTYyMTE4MjkxMywianRpIjoiYTRmNGYyMmItZjM1Zi00ODQ2LTlhNjQtYzA5NjM1YTM4YmFkIiwiaXNzIjoiaHR0cDovLzE3Mi4xNy4wLjE6ODE4MC9hdXRoL3JlYWxtcy9leHBlcmltZW50YWwiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiZWRlM2IyZDYtYTRlZi00MGRhLWFmNWItODk0NjE3M2ZjZGY5IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoibXlhcHAiLCJzZXNzaW9uX3N0YXRlIjoiZTA3ZTAxMjQtYWRmNC00MzVhLWEwZjAtMTg1MzU5YmRjZTY1IiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJTY2hlbWUtTWFuYWdlciIsIm9mZmxpbmVfYWNjZXNzIiwiU2NoZW1lLVB1Ymxpc2hlciIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibXlhcHAiOnsicm9sZXMiOlsiY29udGVudC1jcmVhdG9yIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRlbW8gVXNlciIsInByZWZlcnJlZF91c2VybmFtZSI6ImRlbW91c2VyIiwiZ2l2ZW5fbmFtZSI6IkRlbW8iLCJmYW1pbHlfbmFtZSI6IlVzZXIiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20ifQ.Y7ffiGI3yuDMnIBGq58TMnqC-PIjNw9KWGu9Fn2t7JXCLHml74ezVVcJwWCRGIvapfKjF5HYYe3GcnGJkFCLW8IdeKwFA4YinMMqwvE3ckdkcn2HpKfeDfzI6sucps5BdOurnpPlsIjCKYGPeHnMeJQtkFOoI3kRVkERgGrFzO9FaT3Wbw_bYSIsysY-5bNp1a2Y4Jl5BFUttUw7lFI7HWZuk-DUc3HSQ7xSGoGXcqqe4AUQDVL9auq-uOLn3sIOQdrsPt6v5U-v6zC1EPh2VU7r585ZxEunb2az9M_HCz8gdxB0AUH-YS_Bkt5hamjTVXrVSbH1c9PkwizdhLYf_g",
+    "x-userinfo": "eyJhenAiOiJteWFwcCIsImlhdCI6MTYyMTE4MjkxMywiaXNzIjoiaHR0cDpcL1wvMTcyLjE3LjAuMTo4MTgwXC9hdXRoXC9yZWFsbXNcL2V4cGVyaW1lbnRhbCIsImVtYWlsIjoidGVzdEB0ZXN0LmNvbSIsImdpdmVuX25hbWUiOiJEZW1vIiwic3ViIjoiZWRlM2IyZDYtYTRlZi00MGRhLWFmNWItODk0NjE3M2ZjZGY5IiwiaWQiOiJlZGUzYjJkNi1hNGVmLTQwZGEtYWY1Yi04OTQ2MTczZmNkZjkiLCJhY3RpdmUiOnRydWUsInVzZXJuYW1lIjoiZGVtb3VzZXIiLCJleHAiOjE2MjExODMyMTMsInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX0sIm15YXBwIjp7InJvbGVzIjpbImNvbnRlbnQtY3JlYXRvciJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImF1ZCI6ImFjY291bnQiLCJzZXNzaW9uX3N0YXRlIjoiZTA3ZTAxMjQtYWRmNC00MzVhLWEwZjAtMTg1MzU5YmRjZTY1IiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIlNjaGVtZS1NYW5hZ2VyIiwib2ZmbGluZV9hY2Nlc3MiLCJTY2hlbWUtUHVibGlzaGVyIiwidW1hX2F1dGhvcml6YXRpb24iXX0sIm5hbWUiOiJEZW1vIFVzZXIiLCJjbGllbnRfaWQiOiJteWFwcCIsInByZWZlcnJlZF91c2VybmFtZSI6ImRlbW91c2VyIiwiYWNyIjoiMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJqdGkiOiJhNGY0ZjIyYi1mMzVmLTQ4NDYtOWE2NC1jMDk2MzVhMzhiYWQiLCJmYW1pbHlfbmFtZSI6IlVzZXIiLCJ0eXAiOiJCZWFyZXIifQ==",
+    "cf-connecting-ip": "103.216.147.111",
+    "cdn-loop": "cloudflare",
+    "cf-request-id": "0a17a17457000031a5f0302000000001",
+    "x-request-id": "01647bf0-4ec5-4486-b222-1da2071f901f",
+    "via": "1.1 vegur",
+    "connect-time": "3",
+    "x-request-start": "1621182930580",
+    "total-route-time": "0"
+  },
+  "queryString": {},
+  "postData": {
+    "mimeType": "application/octet-stream",
+    "text": "",
+    "params": []
+  },
+  "headersSize": 3067,
+  "bodySize": 0
+
+```
+In case of failure
+```
+{"message":"Access token does not have the required scope\/role: Missing required realm role"}
+```
+
+Thats All Folks :)
+
+
+
+
+
+
+
