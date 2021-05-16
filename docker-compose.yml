@@ -48,8 +48,9 @@ services:
       KONG_ADMIN_ERROR_LOG:  /dev/stderr
       KONG_PROXY_LISTEN:     0.0.0.0:8000, 0.0.0.0:8443 ssl
       KONG_ADMIN_LISTEN:     0.0.0.0:8001, 0.0.0.0:8444 ssl
-      KONG_PLUGINS:          bundled,oidc
+      KONG_PLUGINS:          bundled,oidc,jwt-keycloak #Change
       KONG_LOG_LEVEL:        debug
+      JWT_KEYCLOAK_PRIORITY: 900   #Change
 
   konga:
     image: pantsel/konga:0.14.7
@@ -98,4 +99,3 @@ services:
       DB_PASSWORD: password
       KEYCLOAK_USER:     admin
       KEYCLOAK_PASSWORD: admin
-
