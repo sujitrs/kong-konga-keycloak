@@ -553,7 +553,7 @@ As a reponse, you should be getting something like below
 
 ## Kong plugin jwt-keycloak
 
-(Reference)[https://github.com/gbbirkisson/kong-plugin-jwt-keycloak.git]
+[Reference](https://github.com/gbbirkisson/kong-plugin-jwt-keycloak.git)
 
 ### Parameters
 
@@ -637,7 +637,7 @@ echo $RAWTKN
 }
 ```
 
-You may use (JWT Decoder)[https://jwt.io/] by pasting the value from ```access-token```
+You may use [JWT Decoder](https://jwt.io/) by pasting the value from ```access-token``` to check content of token. Which all roles exists ? Like wise.
 
 ### Step 5: Check whether the configured roles are part of Token
 Now extract the Token from reponse using
