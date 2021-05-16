@@ -167,6 +167,10 @@ $ curl -s -X POST http://localhost:8001/services \
     -d name=mock-service \
     -d url=http://mockbin.org/request \
     | python -mjson.tool
+```
+As a reponse, you should be getting something like below
+
+```bash    
 {
     "connect_timeout": 60000,
     "created_at": 1556145691,
@@ -182,6 +186,9 @@ to make the next call to kong's api that allows you to add a route to the servic
 ```bash
 $ curl -s -X POST http://localhost:8001/services/e71c82d3-2e53-469b-9beb-a232a15f86d4/routes -d "paths[]=/mock" \
     | python -mjson.tool
+```
+As a reponse, you should be getting something like below
+```bash    
 {
     "created_at": 1556146020,
     "destinations": null,
@@ -201,6 +208,10 @@ We verify that everything works:
 
 ```bash
 $ curl -s http://localhost:8000/mock
+```
+As a reponse, you should be getting something like below
+```bash    
+
 {
   "startedDateTime": "2019-04-24T22:49:26.886Z",
   "clientIPAddress": "172.20.0.1",
@@ -436,6 +447,9 @@ Let's try to access our API without authorization:
 ```bash
 curl "http://${HOST_IP}:8000/mock" \
 -H "Accept: application/json" -I
+```
+As a reponse, you should be getting something like below
+```bash    
 HTTP/1.1 401 Unauthorized
 Date: Sat, 07 Sep 2019 05:44:13 GMT
 Connection: keep-alive
@@ -491,6 +505,10 @@ Let's use the access token to access the authenticated api:
 curl "http://${HOST_IP}:8000/mock" \
 -H "Accept: application/json" \
 -H "Authorization: Bearer $TKN"
+```
+As a reponse, you should be getting something like below
+```bash    
+
 {
   "startedDateTime": "2019-09-06T05:20:40.123Z",
   "clientIPAddress": "192.168.88.21",
