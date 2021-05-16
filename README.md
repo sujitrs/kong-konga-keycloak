@@ -3,6 +3,7 @@
 ## Credits
 
 [Securing APIs with Kong and Keycloak - Part 1](https://www.jerney.io/secure-apis-kong-keycloak-1/) by Joshua A Erney
+
 [Kong plugin jwt-keycloak](https://github.com/gbbirkisson/kong-plugin-jwt-keycloak)
 
 ## Requirements
