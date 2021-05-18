@@ -21,9 +21,8 @@
 - Konga 0.14.7
 - Keycloak 10.0.2
 
-## Goal of this tutorial
-
-The goal of this tutorial is to be able to protect, through the configuration of kong and keycloak, an API resource.
+# Part 1: Make them Talk - Keycloak and Kong
+To protect, through the configuration of kong and keycloak, an API resource.
 More in details, let's consider the following request flow:
 
 ![Request Flow](images/request-flow.png)
@@ -549,6 +548,8 @@ As a reponse, you should be getting something like below
 }
 ```
 
+
+
 # Part 2: Adding Role/Scope level validation at service level
 
 ## Kong plugin jwt-keycloak
@@ -582,6 +583,8 @@ As a reponse, you should be getting something like below
 | config.consumer_match_claim_custom_id  | no      | `false`           | A boolean value that indicates if the plugin should match the `consumer_match_claim` claim against the consumers `id` or `custom_id`. By default it matches the consumer against the `id`.                                                                                                                                                                                               |
 | config.consumer_match_ignore_not_found | no      | `false`           | A boolean value that indicates if the request should be let through regardless if the plugin is able to match the request to a kong consumer or not.                                                                                                                                                                                                                                     
 
+
+## Follow Steps
 ### Step 1: Add Role in Keycloak
 
 1. Login to Keycloak
