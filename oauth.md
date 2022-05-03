@@ -26,4 +26,23 @@ There are four types of grant
   * A user-agent-based application > A user-agent-based application is a public client in which the client code is downloaded from a web server and executes within a user-agent (e.g., web browser) on the device used by the resource       owner.  Protocol data and credentials are easily accessible (and often visible) to the resource owner.  Since such applications reside within the user-agent, they can make seamless use of the       user-agent capabilities when requesting authorization.
   * A native application > A native application is a public client installed and executed on the device used by the resource owner.  Protocol data and credentials are accessible to the resource owner.  It is assumed that any client authentication credentials included in the application can be extracted.  On the other hand, dynamically issued credentials such as access tokens or refresh tokens can receive an acceptable level of protection.  At a minimum, these credentials are protected from hostile servers with which the application may interact.  On some platforms, these credentials might be protected from other applications residing on the same device.
 
+## Authorisation Code Grant
+ Web Application with Server Backend
+ ![image](https://user-images.githubusercontent.com/23429265/166450892-cecccd43-cba8-42c8-b28d-0fbb512613cc.png)
+
+## Client Credentials Grant
+ Microservices and APIs
+ ![image](https://user-images.githubusercontent.com/23429265/166450799-332e1f4a-f0b5-4f0c-86a6-5aba4005e8c3.png)
+
+## Password Grant
+Trusted Client/First party - Native App or User Agent Based Apps
+![image](https://user-images.githubusercontent.com/23429265/166454396-32296cbf-38ad-42c7-90c3-8384a7c48012.png)
+
+## Authorisation Code Flow with PKCE
+ Native Mobile App with API Backend
+ 
+## Implicit Grant
+ For Third Party/Untrusted Client User Agent Based Apps
+ ![image](https://user-images.githubusercontent.com/23429265/166450929-b5a8a93d-f40b-4eda-ba51-be2a92c5a41f.png)
+
 
