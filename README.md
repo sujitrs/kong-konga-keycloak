@@ -702,6 +702,34 @@ In case of failure
 
 Thats All Folks :)
 
+# Part 3: Architecture to follow for different use cases of AuthN and AuthZ
+## Introduction
+
+Public Client/User Agent based application - Single page Application - Angular
+Confidential Client - Server Side Application - JSP
+![image](https://user-images.githubusercontent.com/23429265/166451064-42c31dbb-2896-4185-a70d-77ac3c707979.png)
+
+
+## Authorisation Code Grant
+ Web Application with Server Backend
+ ![image](https://user-images.githubusercontent.com/23429265/166450892-cecccd43-cba8-42c8-b28d-0fbb512613cc.png)
+
+## Client Credentials Grant
+ Microservices and APIs
+ ![image](https://user-images.githubusercontent.com/23429265/166450799-332e1f4a-f0b5-4f0c-86a6-5aba4005e8c3.png)
+
+## Password Grant
+Trusted Client/First party - Native App or User Agent Based Apps
+![image](https://user-images.githubusercontent.com/23429265/166454396-32296cbf-38ad-42c7-90c3-8384a7c48012.png)
+
+## Authorisation Code Flow with PKCE
+ Native Mobile App with API Backend
+ 
+## Implicit Grant
+ For Third Party/Untrusted Client User Agent Based Apps
+ ![image](https://user-images.githubusercontent.com/23429265/166450929-b5a8a93d-f40b-4eda-ba51-be2a92c5a41f.png)
+
+
 
 
 
