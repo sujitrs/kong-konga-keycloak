@@ -15,7 +15,7 @@ There are four types of grant
 
 ![image](https://user-images.githubusercontent.com/23429265/166479084-4d936166-2beb-4c96-a129-842cff682139.png)
 
-## Which is one if fit for what ?
+## Which one is fit for which usecase ?
 
 ![image](https://user-images.githubusercontent.com/23429265/166479314-8e64abb0-fa37-4beb-a892-d2f979a769b3.png)
 
